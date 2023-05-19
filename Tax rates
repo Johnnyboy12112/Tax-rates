@@ -1,0 +1,67 @@
+import com.earth2me.essentials.Essentials;
+import com.earth2me.essentials.User;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class TaxPlugin implements Listener {
+    private Map<Player, Integer> balanceChanges = new HashMap<>();
+    private Map<Integer, Double> taxRates = new HashMap<>();
+    private Essentials essentials;
+
+    public TaxPlugin(Essentials essentials) {
+        this.essentials = essentials;
+
+        // Initialize the tax rate tiers
+        taxRates.put(1000000, 0.0); // Up to 1 million: 0% tax rate
+        taxRates.put(10000000, 0.0); // 1 million to 10 million: 0% tax rate
+        taxRates.put(20000000, 0.1); // 10 million to 20 million: 10% tax rate
+        taxRates.put(30000000, 0.2); // 20 million to 30 million: 20% tax rate
+        taxRates.put(40000000, 0.3); // 30 million to 40 million: 30% tax rate
+        taxRates.put(50000000, 0.4); // 40 million to 50 million: 40% tax rate
+        taxRates.put(60000000, 0.5); // 50 million to 60 million: 50% tax rate
+        taxRates.put(70000000, 0.6); // 60 million to 70 million: 60% tax rate
+        taxRates.put(80000000, 0.7); // 70 million to 80 million: 70% tax rate
+        taxRates.put(90000000, 0.8); // 80 million to 90 million: 80% tax rate
+        taxRates.put(100000000, 0.9); // 90 million to 100 million: 90% tax rate
+        taxRates.put(Integer.MAX_VALUE, 0.95); // 100 million and above: 95% tax rate
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        int balanceChange = getBalanceChangeForPlayer(player);
+
+        double taxRate = getTaxRate(balanceChange);
+        double taxAmount = balanceChange * taxRate;
+
+        // Deduct the tax amount from the player's balance
+        User user = essentials.getUser(player);
+        user.setMoney(user.getMoney() - taxAmount);
+    }
+
+    private int getBalanceChangeForPlayer(Player player) {
+        // Retrieve the balance change for the player from the storage (e.g., database or cache)
+        // Calculate the net balance change by subtracting any decreases or refunds
+        int amountAdded = 0; // Get the total amount added to the balance
+        int amountSold = 0; // Get the total amount sold from the balance
+        int balanceChange = amountAdded - amountSold;
+
+        // Store the balance change for the player (e.g., in a map or database)
+        balanceChanges.put(player, balanceChange);
+
+        return balanceChange;
+    }
+
+    private double getTaxRate(int balanceChange) {
+        for (Map.Entry<Integer, Double> entry : taxRates.entrySet()) {
+            if (balanceChange < entry.getKey()) {
+                return entry.getValue();
+            }
+        }
+
+        return 0.0; // Default to
